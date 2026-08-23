@@ -9,7 +9,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,12 +31,24 @@ public class ProfileManager {
     public void load() throws IOException {
         File file = new File(farmControl.getDataFolder(), "profiles.yml");
         if (!file.exists()) {
-            file.getParentFile().mkdirs();
-            Files.copy(Objects.requireNonNull(farmControl.getResource("resources/profiles.yml")), file.toPath());
+            saveDefaultProfiles(file);
         }
 
         ConfigurationSection profilesSection = YamlConfiguration.loadConfiguration(file).getConfigurationSection("profiles");
-        for (String name : Objects.requireNonNull(profilesSection).getKeys(false)) {
+        if (profilesSection == null) {
+            farmControl.getLogger().warning("The file 'profiles.yml' has no 'profiles' section - it is empty or malformed.");
+            File brokenFile = new File(farmControl.getDataFolder(), "profiles.yml.broken");
+            Files.deleteIfExists(brokenFile.toPath());
+            Files.move(file.toPath(), brokenFile.toPath());
+            farmControl.getLogger().warning("The old file has been kept as 'profiles.yml.broken' and the defaults have been regenerated.");
+            saveDefaultProfiles(file);
+            profilesSection = YamlConfiguration.loadConfiguration(file).getConfigurationSection("profiles");
+            if (profilesSection == null) {
+                farmControl.getLogger().severe("Unable to load any profiles - FarmControl will not act on any entities.");
+                return;
+            }
+        }
+        for (String name : profilesSection.getKeys(false)) {
             try {
                 ConfigurationSection profileSection = Objects.requireNonNull(profilesSection.getConfigurationSection(name));
                 GroupDefinition groupDefinition = GroupDefinition.fromConfigurationSection(farmControl, name, Objects.requireNonNull(profileSection.getConfigurationSection("group")));
@@ -74,5 +88,14 @@ public class ProfileManager {
     public void reload() throws IOException {
         actionProfileMap.clear();
         load();
+    }
+    private void saveDefaultProfiles(File file) throws IOException {
+        file.getParentFile().mkdirs();
+        try (InputStream inputStream = farmControl.getResource("resources/profiles.yml")) {
+            if (inputStream == null) {
+                throw new IOException("The bundled resource 'resources/profiles.yml' is missing from the jar.");
+            }
+            Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 }

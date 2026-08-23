@@ -56,7 +56,8 @@ public class ActionAllocationTask implements Runnable {
             EntityGrouperResult result = EntityGrouper.groupEntities(snapshotEntities, triggerProfilePair.actionProfile.getGroupDefinition());
             for (Group group : result.getGroups()) {
                 MixedEntitySet.MixedEntityIterator iterator = group.getMembers().iterator();
-                while (group.meetsCondition() && iterator.hasNext()) {
+                int remainingRemovals = removes ? group.getExcessCount() : 0;
+                while ((removes ? remainingRemovals > 0 : group.meetsCondition()) && iterator.hasNext()) {
                     SnapshotEntity next = iterator.next();
                     if (shouldExcludePredicate.test(next)) {
                         iterator.skipLast();
@@ -66,6 +67,7 @@ public class ActionAllocationTask implements Runnable {
                     if (removes) {
                         snapshotEntities.remove(next);
                         iterator.remove();
+                        remainingRemovals--;
                     }
 
                     Set<TriggerActionPair> triggerActionPairs = triggerActionMap.computeIfAbsent(next, e -> new HashSet<>());

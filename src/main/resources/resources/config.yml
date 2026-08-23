@@ -22,6 +22,8 @@ world-settings:
       # These profiles are constantly run.
       proactive:
         - soft-nerf-animal-farms
+        - limit-mobs-per-chunk
+        - limit-villagers-per-chunk
       #  - soft-limit-animal-farms
       #  - soft-limit-villager-breeders
       #  - trim-animal-farms

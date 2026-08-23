@@ -23,4 +23,13 @@ public class Group {
     public boolean meetsCondition() {
         return members.size() >= definition.getSize();
     }
+    /**
+     * Returns the number of members above the configured maximum.
+     *
+     * The configured size is the trigger threshold, so a size of 21 means
+     * that at most 20 members should remain in the group.
+     */
+    public int getExcessCount() {
+        return Math.max(0, members.size() - definition.getSize() + 1);
+    }
 }
