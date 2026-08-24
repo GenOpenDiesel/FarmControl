@@ -1,0 +1,6 @@
+# Debug options for FarmControl.
+# Changes are applied after /farmcontrol reload or a server restart.
+
+# Log every mob removed by the "remove" or "kill" action.
+# Logs are written to plugins/FarmControl/logs/YYYY-MM-DD.log.
+mob-removal-logging: true

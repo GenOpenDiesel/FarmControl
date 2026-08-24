@@ -4,6 +4,7 @@ import com.froobworld.farmcontrol.command.FarmControlCommand;
 import com.froobworld.farmcontrol.config.FcConfig;
 import com.froobworld.farmcontrol.controller.*;
 import com.froobworld.farmcontrol.controller.action.RemoveRandomMovementAction;
+import com.froobworld.farmcontrol.debug.MobRemovalLogger;
 import com.froobworld.farmcontrol.message.MessageManager;
 import com.froobworld.farmcontrol.metrics.FcMetrics;
 import org.bukkit.Bukkit;
@@ -21,6 +22,7 @@ public class FarmControl extends JavaPlugin {
     private ExclusionManager exclusionManager;
     private FarmController farmController;
     private MessageManager messageManager;
+    private MobRemovalLogger mobRemovalLogger;
 
     public void onEnable() {
         this.fcConfig = new FcConfig(this);
@@ -32,6 +34,8 @@ public class FarmControl extends JavaPlugin {
 
         hookManager = new HookManager(this);
         hookManager.load();
+        mobRemovalLogger = new MobRemovalLogger(this);
+        mobRemovalLogger.reload();
         actionManager = new ActionManager();
         actionManager.addDefaults(this);
         triggerManager = new TriggerManager();
@@ -69,6 +73,7 @@ public class FarmControl extends JavaPlugin {
 
     public void reload() throws Exception {
         fcConfig.load();
+        mobRemovalLogger.reload();
         hookManager.reload();
         farmController.unRegister();
         profileManager.reload();
@@ -84,6 +89,9 @@ public class FarmControl extends JavaPlugin {
         }
 
         RemoveRandomMovementAction.cleanUp(this);
+        if (mobRemovalLogger != null) {
+            mobRemovalLogger.shutdown();
+        }
     }
 
     public FcConfig getFcConfig() {
@@ -116,6 +124,10 @@ public class FarmControl extends JavaPlugin {
 
     public MessageManager getMessageManager() {
         return messageManager;
+    }
+
+    public MobRemovalLogger getMobRemovalLogger() {
+        return mobRemovalLogger;
     }
 
     public void registerCommands() {

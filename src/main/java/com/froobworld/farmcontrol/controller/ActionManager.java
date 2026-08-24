@@ -15,8 +15,8 @@ public class ActionManager {
 
     public void addDefaults(FarmControl farmControl) {
         addAction(new DisableCollisionsAction());
-        addAction(new KillAction());
-        addAction(new RemoveAction());
+        addAction(new KillAction(farmControl.getMobRemovalLogger()));
+        addAction(new RemoveAction(farmControl.getMobRemovalLogger()));
         addAction(new RemoveAiAction());
         addAction(new RemoveAwarenessAction());
         addAction(new DisableBreedingAction(new BreedingBlocker(farmControl)));
