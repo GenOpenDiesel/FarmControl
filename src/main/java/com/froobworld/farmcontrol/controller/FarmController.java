@@ -62,6 +62,9 @@ public class FarmController {
     public void addWorld(World world) {
         Map<Trigger, Set<ActionProfile>> triggerProfileMap = worldTriggerProfilesMap.computeIfAbsent(world, w -> new HashMap<>());
         Trigger proactiveTrigger = farmControl.getTriggerManager().getTrigger("proactive");
+        Set<ActionProfile> proactiveProfiles = triggerProfileMap.computeIfAbsent(proactiveTrigger, trigger -> new HashSet<>());
+        proactiveProfiles.add(farmControl.getProfileManager().getActionProfile(ProfileManager.PASSIVE_MOB_LIMIT_PROFILE));
+        proactiveProfiles.add(farmControl.getProfileManager().getActionProfile(ProfileManager.HOSTILE_MOB_LIMIT_PROFILE));
         for (String profileName : farmControl.getFcConfig().worldSettings.of(world).profiles.proactive.get()) {
             ActionProfile actionProfile = farmControl.getProfileManager().getActionProfile(profileName.toLowerCase());
             if (actionProfile == null) {
@@ -69,7 +72,7 @@ public class FarmController {
                 continue;
             }
 
-            triggerProfileMap.computeIfAbsent(proactiveTrigger, trigger -> new HashSet<>()).add(actionProfile);
+            proactiveProfiles.add(actionProfile);
         }
 
         if (farmControl.getHookManager().getMsptTracker() != null) {

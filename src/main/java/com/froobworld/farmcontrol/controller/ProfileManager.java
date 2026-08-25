@@ -17,6 +17,12 @@ import java.util.stream.Collectors;
 
 public class ProfileManager {
 
+    public static final int HARDCODED_MOB_LIMIT = 20;
+    public static final String PASSIVE_MOB_LIMIT_PROFILE = "hardcoded-passive-mob-limit";
+    public static final String HOSTILE_MOB_LIMIT_PROFILE = "hardcoded-hostile-mob-limit";
+    private static final String LEGACY_MOB_LIMIT_PROFILE = "limit-mobs-per-chunk";
+    private static final String LEGACY_VILLAGER_LIMIT_PROFILE = "limit-villagers-per-chunk";
+
     private final FarmControl farmControl;
     private final Map<String, ActionProfile> actionProfileMap = new HashMap<>();
 
@@ -83,6 +89,8 @@ public class ProfileManager {
                 farmControl.getLogger().warning("Unable to load the profile '" + name + "'. Incorrect syntax?");
             }
         }
+
+        addHardcodedMobLimitProfiles();
     }
 
     public void reload() throws IOException {
@@ -97,5 +105,44 @@ public class ProfileManager {
             }
             Files.copy(inputStream, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
         }
+    }
+
+    private void addHardcodedMobLimitProfiles() {
+        Action killAction = Objects.requireNonNull(farmControl.getActionManager().getAction("kill"));
+        EntityCategory allMobs = Objects.requireNonNull(EntityCategory.ofName("category:mob"));
+        EntityCategory monsters = Objects.requireNonNull(EntityCategory.ofName("category:monster"));
+
+        ActionProfile passiveMobLimit = new ActionProfile(
+                new GroupDefinition(
+                        Set.of(allMobs),
+                        Set.of(monsters),
+                        HARDCODED_MOB_LIMIT + 1,
+                        0,
+                        true,
+                        false,
+                        false
+                ),
+                Set.of(killAction)
+        );
+        ActionProfile hostileMobLimit = new ActionProfile(
+                new GroupDefinition(
+                        Set.of(monsters),
+                        Collections.emptySet(),
+                        HARDCODED_MOB_LIMIT + 1,
+                        0,
+                        true,
+                        false,
+                        false
+                ),
+                Set.of(killAction)
+        );
+
+        actionProfileMap.put(PASSIVE_MOB_LIMIT_PROFILE, passiveMobLimit);
+        actionProfileMap.put(HOSTILE_MOB_LIMIT_PROFILE, hostileMobLimit);
+
+        // Keep old installations safe: their config still references these profile names.
+        // Aliasing them prevents the previous combined/villager limits from being loaded.
+        actionProfileMap.put(LEGACY_MOB_LIMIT_PROFILE, passiveMobLimit);
+        actionProfileMap.put(LEGACY_VILLAGER_LIMIT_PROFILE, hostileMobLimit);
     }
 }

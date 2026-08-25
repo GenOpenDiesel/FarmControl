@@ -1,28 +1,6 @@
 # Please visit https://github.com/froobynooby/FarmControl/wiki/Profiles for help with making profiles.
 
 profiles:
-  # No more than 20 mobs (villagers excluded) per chunk - the excess is killed, youngest first
-  limit-mobs-per-chunk:
-    group:
-      types:
-        - "category:mob"
-      exclude-types:
-        - "villager"
-      count: 21
-      distance: same-chunk
-    actions:
-      - kill
-
-  # No more than 17 villagers per chunk - the excess is killed, youngest first
-  limit-villagers-per-chunk:
-    group:
-      types:
-        - "villager"
-      count: 18
-      distance: same-chunk
-    actions:
-      - kill
-
   # Remove random movements and disable collisions of mobs in animal farms
   soft-nerf-animal-farms:
     group:
