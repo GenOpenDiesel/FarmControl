@@ -23,3 +23,30 @@ cd FarmControl
 ```
 
 2\. Find jar in `FarmControl/build/libs`
+
+## Death watch (fork addition)
+The death watch answers the question "what is killing the mobs in my farm?".
+
+For every mob that dies or vanishes inside a configured zone it records:
+* what died — entity type, custom name, UUID and exact coordinates,
+* what it died of — the damage cause (`LAVA`, `FALL`, `ENTITY_ATTACK`, `CRAMMING`, …) or the removal reason
+  (`REMOVE_DESPAWN`, `REMOVE_TRANSFORMATION`, `REMOVE_MERGE`, `REMOVE_PLUGIN`, …),
+* which mob did it — projectiles, area effect clouds, TNT and evoker fangs are followed back to the mob that
+  fired them, along with its distance from the victim and the item it was holding,
+* which plugin did it, when a mob was removed by plugin code,
+* FarmControl's own culls, logged as `FARMCONTROL_KILL` / `FARMCONTROL_REMOVE` so they can never be mistaken
+  for something else.
+
+Zones are configured in `plugins/FarmControl/debug.yml` as cylinders (`radius` horizontally, `vertical-radius`
+above and below `y`). Records go to `plugins/FarmControl/logs/YYYY-MM-DD.log` and are kept in memory for:
+
+```
+/fc deaths                      # last 60 minutes, all zones
+/fc deaths nether-farm 180      # one zone, last 3 hours
+/fc deaths world 60 list        # one world, plus the latest individual entries
+/fc deaths zones                # show the configured zones
+```
+
+The summary breaks the losses down by victim type, by cause, by killer mob, and as `victim <- culprit` pairs.
+Requires the `farmcontrol.command.deaths` permission (op by default). Removal tracking needs Paper's
+`EntityRemoveEvent`; deaths are logged on any Spigot-compatible server. Folia-safe.

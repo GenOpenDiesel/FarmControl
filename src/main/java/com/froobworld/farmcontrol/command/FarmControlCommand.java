@@ -25,6 +25,7 @@ public class FarmControlCommand implements CommandExecutor {
     private final StatusCommand statusCommand;
     private final HistoryCommand historyCommand;
     private final NotifyCommand notifyCommand;
+    private final DeathsCommand deathsCommand;
 
     public FarmControlCommand(FarmControl farmControl) {
         this.farmControl = farmControl;
@@ -32,6 +33,7 @@ public class FarmControlCommand implements CommandExecutor {
         statusCommand = new StatusCommand(farmControl);
         historyCommand = new HistoryCommand(farmControl);
         notifyCommand = new NotifyCommand(farmControl);
+        deathsCommand = new DeathsCommand(farmControl);
     }
 
     @Override
@@ -77,6 +79,15 @@ public class FarmControlCommand implements CommandExecutor {
             }
         }
 
+        if ((args[0].equalsIgnoreCase("deaths") || args[0].equalsIgnoreCase("deathwatch"))) {
+            if (sender.hasPermission("farmcontrol.command.deaths")) {
+                return deathsCommand.onCommand(sender, command, s, args);
+            } else {
+                sender.sendMessage(NO_PERMISSION_MESSAGE);
+                return true;
+            }
+        }
+
         sendHelp(sender, s);
         return true;
     }
@@ -100,6 +111,10 @@ public class FarmControlCommand implements CommandExecutor {
         if (sender.hasPermission("farmcontrol.command.notify")) {
             sender.sendMessage("/" + cl + " notify ");
         }
+
+        if (sender.hasPermission("farmcontrol.command.deaths")) {
+            sender.sendMessage("/" + cl + " deaths [zone|world|zones] [minutes] [list]");
+        }
     }
 
     public TabCompleter getTabCompleter() {
@@ -121,6 +136,10 @@ public class FarmControlCommand implements CommandExecutor {
                 if (sender.hasPermission("farmcontrol.command.notify")) {
                     completions.add("notify");
                 }
+
+                if (sender.hasPermission("farmcontrol.command.deaths")) {
+                    completions.add("deaths");
+                }
             }
 
             if (args.length == 2) {
@@ -131,6 +150,26 @@ public class FarmControlCommand implements CommandExecutor {
                         }
                     }
                 }
+
+                if ((args[0].equalsIgnoreCase("deaths") || args[0].equalsIgnoreCase("deathwatch"))
+                        && sender.hasPermission("farmcontrol.command.deaths")) {
+                    completions.add("all");
+                    completions.add("zones");
+                    for (World world : Bukkit.getWorlds()) {
+                        completions.add(world.getName());
+                    }
+
+                    farmControl.getMobRemovalLogger().getZones().forEach(zone -> completions.add(zone.getName()));
+                }
+            }
+
+            if (args.length == 3 && (args[0].equalsIgnoreCase("deaths") || args[0].equalsIgnoreCase("deathwatch"))
+                    && sender.hasPermission("farmcontrol.command.deaths")) {
+                completions.add("15");
+                completions.add("60");
+                completions.add("360");
+                completions.add("1440");
+                completions.add("list");
             }
 
             return StringUtil.copyPartialMatches(args[args.length - 1], completions, new ArrayList<>());

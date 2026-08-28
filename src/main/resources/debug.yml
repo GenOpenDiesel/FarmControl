@@ -1,6 +1,58 @@
 # Debug options for FarmControl.
 # Changes are applied after /farmcontrol reload or a server restart.
 
-# Log every mob removed by the "remove" or "kill" action.
+# Log every mob removed by the "remove" or "kill" action, anywhere on the server.
 # Logs are written to plugins/FarmControl/logs/YYYY-MM-DD.log.
 mob-removal-logging: true
+
+# The death watch answers "what is eating my farm?" - for every mob that dies or vanishes inside a watched
+# area it records what killed it, and which mob did it (following projectiles, potion clouds and TNT back to
+# the mob that fired them). Use /fc deaths to summarise the result in game.
+death-watch:
+  enabled: true
+
+  # Write every record to plugins/FarmControl/logs/YYYY-MM-DD.log as well as keeping it in memory.
+  log-to-file: true
+
+  # How many of the most recent records /fc deaths can summarise.
+  memory-records: 5000
+
+  # Log mobs that died.
+  log-deaths: true
+
+  # Log mobs that vanished without dying: despawns, transformations, merges, plugin removals.
+  # Requires Paper (EntityRemoveEvent).
+  log-removals: true
+
+  # Removal causes that are normal world behaviour and would only add noise.
+  ignored-removal-causes:
+    - UNLOAD
+    - PLAYER_QUIT
+    - PICKUP
+    - DROP
+
+  # Log losses outside of the zones below as well. Very noisy - leave this off unless you are hunting
+  # something server wide.
+  log-outside-zones: false
+
+  # Only watch these entity types. Leave empty to watch everything.
+  # Example: [SHEEP, FROG, COW, VILLAGER]
+  entity-types: []
+
+  # The areas being watched. Each zone is a cylinder: 'radius' blocks horizontally around x/z and
+  # 'vertical-radius' blocks above and below y.
+  zones:
+    - name: nether-farm
+      world: world_nether
+      x: 1151
+      y: 30
+      z: 1007
+      radius: 48
+      vertical-radius: 32
+    - name: overworld-farm
+      world: world
+      x: 1558
+      y: 68
+      z: 4573
+      radius: 48
+      vertical-radius: 32

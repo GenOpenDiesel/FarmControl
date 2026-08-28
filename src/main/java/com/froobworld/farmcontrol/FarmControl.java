@@ -4,6 +4,8 @@ import com.froobworld.farmcontrol.command.FarmControlCommand;
 import com.froobworld.farmcontrol.config.FcConfig;
 import com.froobworld.farmcontrol.controller.*;
 import com.froobworld.farmcontrol.controller.action.RemoveRandomMovementAction;
+import com.froobworld.farmcontrol.debug.DeathWatchListener;
+import com.froobworld.farmcontrol.debug.EntityRemoveListener;
 import com.froobworld.farmcontrol.debug.MobRemovalLogger;
 import com.froobworld.farmcontrol.message.MessageManager;
 import com.froobworld.farmcontrol.metrics.FcMetrics;
@@ -23,6 +25,8 @@ public class FarmControl extends JavaPlugin {
     private FarmController farmController;
     private MessageManager messageManager;
     private MobRemovalLogger mobRemovalLogger;
+    private DeathWatchListener deathWatchListener;
+    private EntityRemoveListener entityRemoveListener;
 
     public void onEnable() {
         this.fcConfig = new FcConfig(this);
@@ -36,6 +40,7 @@ public class FarmControl extends JavaPlugin {
         hookManager.load();
         mobRemovalLogger = new MobRemovalLogger(this);
         mobRemovalLogger.reload();
+        registerDeathWatch();
         actionManager = new ActionManager();
         actionManager.addDefaults(this);
         triggerManager = new TriggerManager();
@@ -83,6 +88,7 @@ public class FarmControl extends JavaPlugin {
     }
 
     public void onDisable() {
+        unregisterDeathWatch();
         if (farmController != null) {
             farmController.unRegister();
             farmController.unload();
@@ -128,6 +134,33 @@ public class FarmControl extends JavaPlugin {
 
     public MobRemovalLogger getMobRemovalLogger() {
         return mobRemovalLogger;
+    }
+
+    /**
+     * Registers the death watch listeners, warning once if the server is too old for removal tracking.
+     */
+    private void registerDeathWatch() {
+        deathWatchListener = new DeathWatchListener(this, mobRemovalLogger);
+        deathWatchListener.register();
+
+        if (EntityRemoveListener.isSupported()) {
+            entityRemoveListener = new EntityRemoveListener(this, mobRemovalLogger, deathWatchListener);
+            entityRemoveListener.register();
+        } else if (mobRemovalLogger.isDeathWatchEnabled() && mobRemovalLogger.isLogRemovals()) {
+            getLogger().warning("This server does not provide EntityRemoveEvent, so the death watch cannot log mobs that vanish without dying.");
+        }
+    }
+
+    private void unregisterDeathWatch() {
+        if (deathWatchListener != null) {
+            deathWatchListener.unregister();
+            deathWatchListener = null;
+        }
+
+        if (entityRemoveListener != null) {
+            entityRemoveListener.unregister();
+            entityRemoveListener = null;
+        }
     }
 
     public void registerCommands() {

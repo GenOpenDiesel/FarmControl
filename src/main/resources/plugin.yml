@@ -21,6 +21,7 @@ permissions:
       - farmcontrol.command.status
       - farmcontrol.command.history
       - farmcontrol.command.notify
+      - farmcontrol.command.deaths
 
   farmcontrol.command.farmcontrol:
     default: op
@@ -47,5 +48,11 @@ permissions:
   farmcontrol.command.notify:
     default: op
     description: Access to the FarmControl notify command.
+    children:
+      - farmcontrol.command.farmcontrol
+
+  farmcontrol.command.deaths:
+    default: op
+    description: Access to the FarmControl death watch command.
     children:
       - farmcontrol.command.farmcontrol
