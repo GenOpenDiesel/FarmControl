@@ -12,6 +12,9 @@ FarmControl is a Bukkit plugin that allows you to control certain properties of 
 * Highly configurable - allowing you to tailor the plugin to your needs.
 * Low impact - with the brunt of the plugin's processing performed asynchronously.
 
+This fork enforces independent per-chunk limits: 20 hostile mobs, 20 non-hostile mobs other than villagers,
+and 15 villagers. An entity can contribute to only one of these three limits.
+
 ## Building
 If you would like to build the plugin yourself you can follow these steps.
 

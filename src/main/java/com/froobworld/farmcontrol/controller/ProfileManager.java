@@ -18,8 +18,10 @@ import java.util.stream.Collectors;
 public class ProfileManager {
 
     public static final int HARDCODED_MOB_LIMIT = 20;
+    public static final int HARDCODED_VILLAGER_LIMIT = 15;
     public static final String PASSIVE_MOB_LIMIT_PROFILE = "hardcoded-passive-mob-limit";
     public static final String HOSTILE_MOB_LIMIT_PROFILE = "hardcoded-hostile-mob-limit";
+    public static final String VILLAGER_LIMIT_PROFILE = "hardcoded-villager-limit";
     private static final String LEGACY_MOB_LIMIT_PROFILE = "limit-mobs-per-chunk";
     private static final String LEGACY_VILLAGER_LIMIT_PROFILE = "limit-villagers-per-chunk";
 
@@ -111,11 +113,12 @@ public class ProfileManager {
         Action killAction = Objects.requireNonNull(farmControl.getActionManager().getAction("kill"));
         EntityCategory allMobs = Objects.requireNonNull(EntityCategory.ofName("category:mob"));
         EntityCategory monsters = Objects.requireNonNull(EntityCategory.ofName("category:monster"));
+        EntityCategory villagers = Objects.requireNonNull(EntityCategory.ofName("villager"));
 
         ActionProfile passiveMobLimit = new ActionProfile(
                 new GroupDefinition(
                         Set.of(allMobs),
-                        Set.of(monsters),
+                        Set.of(monsters, villagers),
                         HARDCODED_MOB_LIMIT + 1,
                         0,
                         true,
@@ -136,13 +139,26 @@ public class ProfileManager {
                 ),
                 Set.of(killAction)
         );
+        ActionProfile villagerLimit = new ActionProfile(
+                new GroupDefinition(
+                        Set.of(villagers),
+                        Collections.emptySet(),
+                        HARDCODED_VILLAGER_LIMIT + 1,
+                        0,
+                        true,
+                        false,
+                        false
+                ),
+                Set.of(killAction)
+        );
 
         actionProfileMap.put(PASSIVE_MOB_LIMIT_PROFILE, passiveMobLimit);
         actionProfileMap.put(HOSTILE_MOB_LIMIT_PROFILE, hostileMobLimit);
+        actionProfileMap.put(VILLAGER_LIMIT_PROFILE, villagerLimit);
 
         // Keep old installations safe: their config still references these profile names.
-        // Aliasing them prevents the previous combined/villager limits from being loaded.
+        // Aliasing them prevents duplicate legacy profiles from changing the hardcoded limits.
         actionProfileMap.put(LEGACY_MOB_LIMIT_PROFILE, passiveMobLimit);
-        actionProfileMap.put(LEGACY_VILLAGER_LIMIT_PROFILE, hostileMobLimit);
+        actionProfileMap.put(LEGACY_VILLAGER_LIMIT_PROFILE, villagerLimit);
     }
 }
