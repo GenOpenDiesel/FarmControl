@@ -189,3 +189,7 @@ gradle-app.setting
 
 # End of https://www.gitignore.io/api/gradle,eclipse,intellij,netbeans
 /.idea/
+
+# Publish verified plugin builds for direct GitHub downloads.
+!/dist/
+!/dist/*.jar

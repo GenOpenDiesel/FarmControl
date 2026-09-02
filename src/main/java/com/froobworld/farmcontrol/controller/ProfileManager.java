@@ -17,13 +17,21 @@ import java.util.stream.Collectors;
 
 public class ProfileManager {
 
-    public static final int HARDCODED_MOB_LIMIT = 20;
-    public static final int HARDCODED_VILLAGER_LIMIT = 15;
+    public static final int PASSIVE_MOB_LIMIT = 20;
+    public static final int HOSTILE_MOB_LIMIT = 20;
+    public static final int VILLAGER_LIMIT = 15;
     public static final String PASSIVE_MOB_LIMIT_PROFILE = "hardcoded-passive-mob-limit";
     public static final String HOSTILE_MOB_LIMIT_PROFILE = "hardcoded-hostile-mob-limit";
     public static final String VILLAGER_LIMIT_PROFILE = "hardcoded-villager-limit";
     private static final String LEGACY_MOB_LIMIT_PROFILE = "limit-mobs-per-chunk";
     private static final String LEGACY_VILLAGER_LIMIT_PROFILE = "limit-villagers-per-chunk";
+    private static final Set<String> RESERVED_LIMIT_PROFILES = Set.of(
+            PASSIVE_MOB_LIMIT_PROFILE,
+            HOSTILE_MOB_LIMIT_PROFILE,
+            VILLAGER_LIMIT_PROFILE,
+            LEGACY_MOB_LIMIT_PROFILE,
+            LEGACY_VILLAGER_LIMIT_PROFILE
+    );
 
     private final FarmControl farmControl;
     private final Map<String, ActionProfile> actionProfileMap = new HashMap<>();
@@ -37,6 +45,8 @@ public class ProfileManager {
     }
 
     public void load() throws IOException {
+        purgeConfiguredLimitProfiles(farmControl);
+
         File file = new File(farmControl.getDataFolder(), "profiles.yml");
         if (!file.exists()) {
             saveDefaultProfiles(file);
@@ -57,6 +67,12 @@ public class ProfileManager {
             }
         }
         for (String name : profilesSection.getKeys(false)) {
+            // Mob limits are owned by code. Never interpret a configured profile
+            // with a reserved current or legacy name, even if disk cleanup failed.
+            if (isHardcodedLimitProfile(name)) {
+                continue;
+            }
+
             try {
                 ConfigurationSection profileSection = Objects.requireNonNull(profilesSection.getConfigurationSection(name));
                 GroupDefinition groupDefinition = GroupDefinition.fromConfigurationSection(farmControl, name, Objects.requireNonNull(profileSection.getConfigurationSection("group")));
@@ -99,6 +115,102 @@ public class ProfileManager {
         actionProfileMap.clear();
         load();
     }
+
+    public static boolean isHardcodedLimitProfile(String profileName) {
+        return profileName != null && RESERVED_LIMIT_PROFILES.contains(profileName.toLowerCase(Locale.ROOT));
+    }
+
+    /**
+     * Removes obsolete configurable copies of the three code-owned mob limits.
+     * Other user profiles and world assignments remain untouched.
+     */
+    public static void purgeConfiguredLimitProfiles(FarmControl farmControl) {
+        int removedEntries = 0;
+
+        try {
+            removedEntries += purgeProfilesFile(new File(farmControl.getDataFolder(), "profiles.yml"));
+        } catch (Exception exception) {
+            farmControl.getLogger().warning("Could not remove mob-limit profiles from profiles.yml: "
+                    + exception.getMessage());
+        }
+
+        try {
+            removedEntries += purgeConfigFile(new File(farmControl.getDataFolder(), "config.yml"));
+        } catch (Exception exception) {
+            farmControl.getLogger().warning("Could not remove mob-limit profile assignments from config.yml: "
+                    + exception.getMessage());
+        }
+
+        if (removedEntries > 0) {
+            farmControl.getLogger().info("Removed " + removedEntries
+                    + " configurable mob-limit entries; limits are enforced only by code.");
+        }
+    }
+
+    static int purgeProfilesFile(File file) throws Exception {
+        if (!file.isFile()) {
+            return 0;
+        }
+
+        YamlConfiguration configuration = loadYaml(file);
+        ConfigurationSection profiles = configuration.getConfigurationSection("profiles");
+        if (profiles == null) {
+            return 0;
+        }
+
+        int removed = 0;
+        for (String profileName : new HashSet<>(profiles.getKeys(false))) {
+            if (isHardcodedLimitProfile(profileName)) {
+                profiles.set(profileName, null);
+                removed++;
+            }
+        }
+
+        if (removed > 0) {
+            configuration.save(file);
+        }
+        return removed;
+    }
+
+    static int purgeConfigFile(File file) throws Exception {
+        if (!file.isFile()) {
+            return 0;
+        }
+
+        YamlConfiguration configuration = loadYaml(file);
+        ConfigurationSection worldSettings = configuration.getConfigurationSection("world-settings");
+        if (worldSettings == null) {
+            return 0;
+        }
+
+        int removed = 0;
+        for (String worldName : worldSettings.getKeys(false)) {
+            for (String mode : List.of("proactive", "reactive")) {
+                String path = worldName + ".profiles." + mode;
+                List<String> configuredProfiles = new ArrayList<>(worldSettings.getStringList(path));
+                int previousSize = configuredProfiles.size();
+                configuredProfiles.removeIf(ProfileManager::isHardcodedLimitProfile);
+                int removedFromList = previousSize - configuredProfiles.size();
+                if (removedFromList > 0) {
+                    worldSettings.set(path, configuredProfiles);
+                    removed += removedFromList;
+                }
+            }
+        }
+
+        if (removed > 0) {
+            configuration.save(file);
+        }
+        return removed;
+    }
+
+    private static YamlConfiguration loadYaml(File file) throws Exception {
+        YamlConfiguration configuration = new YamlConfiguration();
+        configuration.options().parseComments(true);
+        configuration.load(file);
+        return configuration;
+    }
+
     private void saveDefaultProfiles(File file) throws IOException {
         file.getParentFile().mkdirs();
         try (InputStream inputStream = farmControl.getResource("resources/profiles.yml")) {
@@ -112,14 +224,14 @@ public class ProfileManager {
     private void addHardcodedMobLimitProfiles() {
         Action killAction = Objects.requireNonNull(farmControl.getActionManager().getAction("kill"));
         EntityCategory allMobs = Objects.requireNonNull(EntityCategory.ofName("category:mob"));
-        EntityCategory monsters = Objects.requireNonNull(EntityCategory.ofName("category:monster"));
+        EntityCategory hostileMobs = Objects.requireNonNull(EntityCategory.ofName("category:enemy"));
         EntityCategory villagers = Objects.requireNonNull(EntityCategory.ofName("villager"));
 
         ActionProfile passiveMobLimit = new ActionProfile(
                 new GroupDefinition(
                         Set.of(allMobs),
-                        Set.of(monsters, villagers),
-                        HARDCODED_MOB_LIMIT + 1,
+                        Set.of(hostileMobs, villagers),
+                        PASSIVE_MOB_LIMIT + 1,
                         0,
                         true,
                         false,
@@ -129,9 +241,9 @@ public class ProfileManager {
         );
         ActionProfile hostileMobLimit = new ActionProfile(
                 new GroupDefinition(
-                        Set.of(monsters),
+                        Set.of(hostileMobs),
                         Collections.emptySet(),
-                        HARDCODED_MOB_LIMIT + 1,
+                        HOSTILE_MOB_LIMIT + 1,
                         0,
                         true,
                         false,
@@ -143,7 +255,7 @@ public class ProfileManager {
                 new GroupDefinition(
                         Set.of(villagers),
                         Collections.emptySet(),
-                        HARDCODED_VILLAGER_LIMIT + 1,
+                        VILLAGER_LIMIT + 1,
                         0,
                         true,
                         false,
@@ -155,10 +267,5 @@ public class ProfileManager {
         actionProfileMap.put(PASSIVE_MOB_LIMIT_PROFILE, passiveMobLimit);
         actionProfileMap.put(HOSTILE_MOB_LIMIT_PROFILE, hostileMobLimit);
         actionProfileMap.put(VILLAGER_LIMIT_PROFILE, villagerLimit);
-
-        // Keep old installations safe: their config still references these profile names.
-        // Aliasing them prevents duplicate legacy profiles from changing the hardcoded limits.
-        actionProfileMap.put(LEGACY_MOB_LIMIT_PROFILE, passiveMobLimit);
-        actionProfileMap.put(LEGACY_VILLAGER_LIMIT_PROFILE, villagerLimit);
     }
 }

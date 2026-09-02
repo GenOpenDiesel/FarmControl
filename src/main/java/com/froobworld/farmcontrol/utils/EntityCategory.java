@@ -29,6 +29,7 @@ public class EntityCategory {
         entityCategories.addAll(
                 List.of(
                         new EntityCategory("category:animal", true, Animals.class),
+                        new EntityCategory("category:enemy", true, Enemy.class),
                         new EntityCategory("category:monster", true, Monster.class),
                         new EntityCategory("category:golem", true, Golem.class),
                         new EntityCategory("category:ambient", true, Ambient.class),

@@ -67,6 +67,10 @@ public class FarmController {
         proactiveProfiles.add(farmControl.getProfileManager().getActionProfile(ProfileManager.HOSTILE_MOB_LIMIT_PROFILE));
         proactiveProfiles.add(farmControl.getProfileManager().getActionProfile(ProfileManager.VILLAGER_LIMIT_PROFILE));
         for (String profileName : farmControl.getFcConfig().worldSettings.of(world).profiles.proactive.get()) {
+            if (ProfileManager.isHardcodedLimitProfile(profileName)) {
+                continue;
+            }
+
             ActionProfile actionProfile = farmControl.getProfileManager().getActionProfile(profileName.toLowerCase());
             if (actionProfile == null) {
                 farmControl.getLogger().warning("Unknown profile for world '" + world.getName() + "': '" + profileName.toLowerCase() + "'");
@@ -79,6 +83,10 @@ public class FarmController {
         if (farmControl.getHookManager().getMsptTracker() != null) {
             Trigger reactiveTrigger = farmControl.getTriggerManager().getTrigger("reactive");
             for (String profileName : farmControl.getFcConfig().worldSettings.of(world).profiles.reactive.get()) {
+                if (ProfileManager.isHardcodedLimitProfile(profileName)) {
+                    continue;
+                }
+
                 ActionProfile actionProfile = farmControl.getProfileManager().getActionProfile(profileName.toLowerCase());
                 if (actionProfile == null) {
                     farmControl.getLogger().warning("Unknown profile for world '" + world.getName() + "': '" + profileName.toLowerCase() + "'");

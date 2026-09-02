@@ -29,6 +29,7 @@ public class FarmControl extends JavaPlugin {
     private EntityRemoveListener entityRemoveListener;
 
     public void onEnable() {
+        ProfileManager.purgeConfiguredLimitProfiles(this);
         this.fcConfig = new FcConfig(this);
         try {
             fcConfig.load();
@@ -77,6 +78,7 @@ public class FarmControl extends JavaPlugin {
     }
 
     public void reload() throws Exception {
+        ProfileManager.purgeConfiguredLimitProfiles(this);
         fcConfig.load();
         mobRemovalLogger.reload();
         hookManager.reload();
