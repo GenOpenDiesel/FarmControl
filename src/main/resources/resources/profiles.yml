@@ -54,35 +54,4 @@ profiles:
       distance: 10
     actions:
       - disable-breeding
-
-  # No more than 20 animals (all of the same type) within close proximity
-  trim-animal-farms:
-    group:
-      types:
-        - "category:animal"
-      count: 21
-      distance: 5
-      pure: true
-    actions:
-      - kill
-
-  # No more than 50 animals (all of the same type) sparsely placed (within 160 blocks of each other)
-  trim-sparse-animal-farms:
-    group:
-      types:
-        - "category:animal"
-      count: 51
-      distance: 160
-      pure: true
-    actions:
-      - kill
-
-  # No more than 10 villagers per chunk
-  trim-villager-chunks:
-    group:
-      types:
-        - "villager"
-      count: 11
-      distance: same-chunk
-    actions:
-      - kill
+# Entity-removal limits are intentionally defined only in Java code.

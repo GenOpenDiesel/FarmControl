@@ -24,8 +24,6 @@ world-settings:
         - soft-nerf-animal-farms
       #  - soft-limit-animal-farms
       #  - soft-limit-villager-breeders
-      #  - trim-animal-farms
-      #  - trim-sparse-animal-farms
 
       # These profiles only run when the server is performing poorly and are progressively undone as performance
       # improves (as defined under the reactive-mode-settings).

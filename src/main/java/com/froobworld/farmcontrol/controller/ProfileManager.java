@@ -25,12 +25,18 @@ public class ProfileManager {
     public static final String VILLAGER_LIMIT_PROFILE = "hardcoded-villager-limit";
     private static final String LEGACY_MOB_LIMIT_PROFILE = "limit-mobs-per-chunk";
     private static final String LEGACY_VILLAGER_LIMIT_PROFILE = "limit-villagers-per-chunk";
+    private static final String TRIM_ANIMAL_FARMS_PROFILE = "trim-animal-farms";
+    private static final String TRIM_SPARSE_ANIMAL_FARMS_PROFILE = "trim-sparse-animal-farms";
+    private static final String TRIM_VILLAGER_CHUNKS_PROFILE = "trim-villager-chunks";
     private static final Set<String> RESERVED_LIMIT_PROFILES = Set.of(
             PASSIVE_MOB_LIMIT_PROFILE,
             HOSTILE_MOB_LIMIT_PROFILE,
             VILLAGER_LIMIT_PROFILE,
             LEGACY_MOB_LIMIT_PROFILE,
-            LEGACY_VILLAGER_LIMIT_PROFILE
+            LEGACY_VILLAGER_LIMIT_PROFILE,
+            TRIM_ANIMAL_FARMS_PROFILE,
+            TRIM_SPARSE_ANIMAL_FARMS_PROFILE,
+            TRIM_VILLAGER_CHUNKS_PROFILE
     );
 
     private final FarmControl farmControl;
@@ -45,8 +51,6 @@ public class ProfileManager {
     }
 
     public void load() throws IOException {
-        purgeConfiguredLimitProfiles(farmControl);
-
         File file = new File(farmControl.getDataFolder(), "profiles.yml");
         if (!file.exists()) {
             saveDefaultProfiles(file);
@@ -121,16 +125,18 @@ public class ProfileManager {
     }
 
     /**
-     * Removes obsolete configurable copies of the three code-owned mob limits.
-     * Other user profiles and world assignments remain untouched.
+     * Removes all configurable entity-removal profiles and obsolete assignments.
+     * The safe profiles file is regenerated later by {@link #load()}.
      */
     public static void purgeConfiguredLimitProfiles(FarmControl farmControl) {
         int removedEntries = 0;
 
         try {
-            removedEntries += purgeProfilesFile(new File(farmControl.getDataFolder(), "profiles.yml"));
+            if (deleteProfilesFile(new File(farmControl.getDataFolder(), "profiles.yml"))) {
+                removedEntries++;
+            }
         } catch (Exception exception) {
-            farmControl.getLogger().warning("Could not remove mob-limit profiles from profiles.yml: "
+            farmControl.getLogger().warning("Could not delete profiles.yml: "
                     + exception.getMessage());
         }
 
@@ -143,33 +149,12 @@ public class ProfileManager {
 
         if (removedEntries > 0) {
             farmControl.getLogger().info("Removed " + removedEntries
-                    + " configurable mob-limit entries; limits are enforced only by code.");
+                    + " configurable profile files or assignments; entity-removal limits are enforced only by code.");
         }
     }
 
-    static int purgeProfilesFile(File file) throws Exception {
-        if (!file.isFile()) {
-            return 0;
-        }
-
-        YamlConfiguration configuration = loadYaml(file);
-        ConfigurationSection profiles = configuration.getConfigurationSection("profiles");
-        if (profiles == null) {
-            return 0;
-        }
-
-        int removed = 0;
-        for (String profileName : new HashSet<>(profiles.getKeys(false))) {
-            if (isHardcodedLimitProfile(profileName)) {
-                profiles.set(profileName, null);
-                removed++;
-            }
-        }
-
-        if (removed > 0) {
-            configuration.save(file);
-        }
-        return removed;
+    static boolean deleteProfilesFile(File file) throws IOException {
+        return Files.deleteIfExists(file.toPath());
     }
 
     static int purgeConfigFile(File file) throws Exception {

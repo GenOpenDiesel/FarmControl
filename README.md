@@ -13,9 +13,10 @@ FarmControl is a Bukkit plugin that allows you to control certain properties of 
 * Low impact - with the brunt of the plugin's processing performed asynchronously.
 
 This fork enforces independent, code-owned per-chunk limits: 20 hostile mobs, 20 non-hostile mobs other than
-villagers, and 15 villagers. An entity can contribute to only one of these three limits. These limit profiles
-cannot be configured: obsolete copies are removed from `profiles.yml` and profile assignments in `config.yml`
-when the plugin starts or reloads.
+villagers, and 15 villagers. An entity can contribute to only one of these three limits. These limits cannot be
+configured. On every start or reload, the server's `profiles.yml` is deleted and rebuilt from a safe template
+that contains no entity-removal profiles. Obsolete hardcoded, legacy, and `trim-*` assignments are also removed
+from `config.yml`, so YAML configuration cannot override the code-owned limits.
 
 ## Building
 If you would like to build the plugin yourself you can follow these steps.

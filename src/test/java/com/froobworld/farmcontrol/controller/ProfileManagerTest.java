@@ -28,6 +28,9 @@ public class ProfileManagerTest {
         assertTrue(ProfileManager.isHardcodedLimitProfile("hardcoded-villager-limit"));
         assertTrue(ProfileManager.isHardcodedLimitProfile("limit-mobs-per-chunk"));
         assertTrue(ProfileManager.isHardcodedLimitProfile("limit-villagers-per-chunk"));
+        assertTrue(ProfileManager.isHardcodedLimitProfile("trim-animal-farms"));
+        assertTrue(ProfileManager.isHardcodedLimitProfile("TRIM-SPARSE-ANIMAL-FARMS"));
+        assertTrue(ProfileManager.isHardcodedLimitProfile("trim-villager-chunks"));
         assertFalse(ProfileManager.isHardcodedLimitProfile("soft-nerf-animal-farms"));
     }
 
@@ -43,26 +46,18 @@ public class ProfileManagerTest {
     }
 
     @Test
-    public void removesLimitProfilesButKeepsOtherProfiles() throws Exception {
+    public void deletesConfiguredProfilesFile() throws Exception {
         File file = temporaryFolder.newFile("profiles.yml");
         Files.writeString(file.toPath(), """
                 profiles:
-                  limit-mobs-per-chunk:
-                    group: {}
-                  HARDCODED-VILLAGER-LIMIT:
-                    group: {}
                   custom-profile:
                     group:
                       count: 7
                 """);
 
-        assertEquals(2, ProfileManager.purgeProfilesFile(file));
-
-        YamlConfiguration configuration = YamlConfiguration.loadConfiguration(file);
-        assertFalse(configuration.contains("profiles.limit-mobs-per-chunk"));
-        assertFalse(configuration.contains("profiles.HARDCODED-VILLAGER-LIMIT"));
-        assertNotNull(configuration.getConfigurationSection("profiles.custom-profile"));
-        assertEquals(7, configuration.getInt("profiles.custom-profile.group.count"));
+        assertTrue(ProfileManager.deleteProfilesFile(file));
+        assertFalse(file.exists());
+        assertFalse(ProfileManager.deleteProfilesFile(file));
     }
 
     @Test
@@ -76,17 +71,20 @@ public class ProfileManagerTest {
                         - soft-nerf-animal-farms
                         - limit-mobs-per-chunk
                         - hardcoded-villager-limit
+                        - trim-villager-chunks
                       reactive:
                         - hardcoded-hostile-mob-limit
                         - freeze-animal-farms
+                        - trim-sparse-animal-farms
                   skyblock:
                     profiles:
                       proactive:
                         - LIMIT-VILLAGERS-PER-CHUNK
                         - custom-profile
+                        - TRIM-ANIMAL-FARMS
                 """);
 
-        assertEquals(4, ProfileManager.purgeConfigFile(file));
+        assertEquals(7, ProfileManager.purgeConfigFile(file));
 
         YamlConfiguration configuration = YamlConfiguration.loadConfiguration(file);
         assertEquals(List.of("soft-nerf-animal-farms"),
