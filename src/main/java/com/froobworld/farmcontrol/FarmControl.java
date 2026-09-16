@@ -27,6 +27,7 @@ public class FarmControl extends JavaPlugin {
     private MobRemovalLogger mobRemovalLogger;
     private DeathWatchListener deathWatchListener;
     private EntityRemoveListener entityRemoveListener;
+    private SkyblockIronGolemKillListener skyblockIronGolemKillListener;
 
     public void onEnable() {
         ProfileManager.purgeConfiguredLimitProfiles(this);
@@ -42,6 +43,8 @@ public class FarmControl extends JavaPlugin {
         mobRemovalLogger = new MobRemovalLogger(this);
         mobRemovalLogger.reload();
         registerDeathWatch();
+        skyblockIronGolemKillListener = new SkyblockIronGolemKillListener(this, mobRemovalLogger);
+        skyblockIronGolemKillListener.register();
         actionManager = new ActionManager();
         actionManager.addDefaults(this);
         triggerManager = new TriggerManager();
@@ -81,6 +84,7 @@ public class FarmControl extends JavaPlugin {
         ProfileManager.purgeConfiguredLimitProfiles(this);
         fcConfig.load();
         mobRemovalLogger.reload();
+        skyblockIronGolemKillListener.reload();
         hookManager.reload();
         farmController.unRegister();
         profileManager.reload();
@@ -90,6 +94,10 @@ public class FarmControl extends JavaPlugin {
     }
 
     public void onDisable() {
+        if (skyblockIronGolemKillListener != null) {
+            skyblockIronGolemKillListener.unregister();
+            skyblockIronGolemKillListener = null;
+        }
         unregisterDeathWatch();
         if (farmController != null) {
             farmController.unRegister();
