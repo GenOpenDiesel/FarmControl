@@ -1,0 +1,37 @@
+name: Release FarmControl
+
+# Tag-driven rather than push-driven: a release is a deliberate act, and this branch
+# gets commits that are not meant to become downloads.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out FarmControl
+        uses: actions/checkout@v4
+
+      - name: Set up FarmControl JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - name: Build FarmControl
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build --no-daemon
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/FarmControl-*.jar
+          generate_release_notes: true
